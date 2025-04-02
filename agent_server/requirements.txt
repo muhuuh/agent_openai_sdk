@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+openai
+openai-agents
+python-dotenv
+google-api-python-client
+google-auth-oauthlib
+google-auth-httplib2 

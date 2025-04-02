@@ -5,7 +5,7 @@ from agents import function_tool
 from tools.auth import get_gmail_service
 
 @function_tool
-def list_recent_emails(max_results: int = 5) -> list[dict]:
+def list_recent_emails(max_results: int) -> list[dict]:
     gmail = get_gmail_service()
     results = gmail.users().messages().list(userId="me", maxResults=max_results).execute()
     messages = results.get("messages", [])
@@ -22,7 +22,7 @@ def list_recent_emails(max_results: int = 5) -> list[dict]:
     return output
 
 @function_tool
-def read_emails(sender: str = None, max_results: int = 5, since_days: int = None) -> list[dict]:
+def read_emails(max_results: int, sender: str = None, since_days: int = None) -> list[dict]:
     gmail = get_gmail_service()
     query_parts = []
     if sender:

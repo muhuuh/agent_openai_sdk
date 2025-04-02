@@ -12,7 +12,7 @@ def get_drive_file_id_by_name(service, name, parent_folder_id=None):
     return files[0]["id"] if files else None
 
 @function_tool
-def list_drive_files(folder_name: str = None) -> list[dict]:
+def list_drive_files(folder_name: str) -> list[dict]:
     service = get_drive_service()
     folder_id = get_drive_file_id_by_name(service, folder_name) if folder_name else None
     query = f"'{folder_id}' in parents" if folder_id else None
@@ -20,7 +20,7 @@ def list_drive_files(folder_name: str = None) -> list[dict]:
     return results.get("files", [])
 
 @function_tool
-def read_drive_file(file_name: str, folder_name: str = None) -> str:
+def read_drive_file(file_name: str, folder_name: str) -> str:
     service = get_drive_service()
     folder_id = get_drive_file_id_by_name(service, folder_name) if folder_name else None
     file_id = get_drive_file_id_by_name(service, file_name, parent_folder_id=folder_id)

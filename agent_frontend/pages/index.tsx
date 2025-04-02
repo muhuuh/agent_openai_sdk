@@ -16,7 +16,7 @@ export default function Home() {
       });
 
       const data = await res.json();
-      setResponse(data.response);
+      setResponse(data.response?.final_output || "No final output received.");
     } catch (error) {
       console.error("Error:", error);
       setResponse("An error occurred while processing your request.");
