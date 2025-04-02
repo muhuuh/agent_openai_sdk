@@ -1,30 +1,52 @@
+import io
 from agents import function_tool
-from googleapiclient.discovery import build
-from google.oauth2.credentials import Credentials
-import os, io
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.http import MediaIoBaseDownload
+from tools.auth import get_drive_service
+from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
 
-SCOPES = ["https://www.googleapis.com/auth/drive"]
-CREDENTIALS_PATH = os.getenv("GOOGLE_CREDENTIALS_PATH", "credentials.json")
-
-def get_drive_service():
-    creds = None
-    if os.path.exists("token.json"):
-        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
-    else:
-        flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
-        creds = flow.run_local_server(port=0)
-        with open("token.json", "w") as token:
-            token.write(creds.to_json())
-    return build("drive", "v3", credentials=creds)
+def get_drive_file_id_by_name(service, name, parent_folder_id=None):
+    query = f"name = '{name}'"
+    if parent_folder_id:
+        query += f" and '{parent_folder_id}' in parents"
+    results = service.files().list(q=query, spaces='drive', fields="files(id, name)", pageSize=1).execute()
+    files = results.get("files", [])
+    return files[0]["id"] if files else None
 
 @function_tool
-def list_drive_files(folder_name: str = None) -> list[str]:
+def list_drive_files(folder_name: str = None) -> list[dict]:
     service = get_drive_service()
-    query = f"name = '{folder_name}' and mimeType = 'application/vnd.google-apps.folder'" if folder_name else None
+    folder_id = get_drive_file_id_by_name(service, folder_name) if folder_name else None
+    query = f"'{folder_id}' in parents" if folder_id else None
     results = service.files().list(q=query, pageSize=10, fields="files(id, name)").execute()
-    return [f["name"] for f in results.get("files", [])]
+    return results.get("files", [])
 
+@function_tool
+def read_drive_file(file_name: str, folder_name: str = None) -> str:
+    service = get_drive_service()
+    folder_id = get_drive_file_id_by_name(service, folder_name) if folder_name else None
+    file_id = get_drive_file_id_by_name(service, file_name, parent_folder_id=folder_id)
+    if not file_id:
+        return f"File '{file_name}' not found."
 
+    file_metadata = service.files().get(fileId=file_id, fields="mimeType").execute()
+    mime_type = file_metadata["mimeType"]
 
+    if mime_type == "application/vnd.google-apps.document":
+        request = service.files().export_media(fileId=file_id, mimeType="text/plain")
+    else:
+        request = service.files().get_media(fileId=file_id)
+
+    fh = io.BytesIO()
+    downloader = MediaIoBaseDownload(fh, request)
+    done = False
+    while not done:
+        _, done = downloader.next_chunk()
+    fh.seek(0)
+    return fh.read().decode("utf-8")
+
+@function_tool
+def upload_drive_file(file_path: str, drive_filename: str) -> str:
+    service = get_drive_service()
+    media = MediaFileUpload(file_path, resumable=True)
+    file_metadata = {"name": drive_filename}
+    file = service.files().create(body=file_metadata, media_body=media, fields="id").execute()
+    return f"Uploaded successfully with ID: {file['id']}"
