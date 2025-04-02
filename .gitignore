@@ -21,6 +21,7 @@ out/
 # Credentials and secrets
 credentials.json
 **/credentials.json
+agent_server/token.json
 
 # Logs
 logs
