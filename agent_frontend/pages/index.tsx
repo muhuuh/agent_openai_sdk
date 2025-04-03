@@ -1,92 +1,158 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Head from "next/head";
+import { motion } from "framer-motion";
+import { FiCommand, FiFileText, FiCode, FiLayers } from "react-icons/fi";
+import ChatMessage from "../components/ChatMessage";
+import ChatInput from "../components/ChatInput";
+
+interface ChatMessageData {
+  sender: "user" | "ai";
+  content: string;
+  timestamp: Date;
+}
+
+interface QuickAction {
+  label: string;
+  value: string;
+  icon?: React.ReactNode;
+}
 
 export default function Home() {
-  const [input, setInput] = useState("");
-  const [response, setResponse] = useState("");
+  const [chatHistory, setChatHistory] = useState<ChatMessageData[]>([
+    {
+      sender: "ai",
+      content:
+        "👋 Hello! I'm an AI assistant that can help you with various tasks. How can I assist you today?",
+      timestamp: new Date(),
+    },
+  ]);
   const [isLoading, setIsLoading] = useState(false);
+  const chatEndRef = useRef<null | HTMLDivElement>(null);
 
-  async function handleAsk() {
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatHistory]);
+
+  async function handleSendMessage(messageContent: string) {
+    if (!messageContent.trim()) return;
+
+    const userMessage: ChatMessageData = {
+      sender: "user",
+      content: messageContent,
+      timestamp: new Date(),
+    };
+    setChatHistory((prev) => [...prev, userMessage]);
     setIsLoading(true);
+
     try {
       const res = await fetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input }),
+        body: JSON.stringify({ message: userMessage.content }),
       });
 
       const data = await res.json();
-      setResponse(data.response?.final_output || "No final output received.");
+      const aiResponse: ChatMessageData = {
+        sender: "ai",
+        content:
+          data.response?.final_output || "Sorry, I couldn't get a response.",
+        timestamp: new Date(),
+      };
+      setChatHistory((prev) => [...prev, aiResponse]);
     } catch (error) {
       console.error("Error:", error);
-      setResponse("An error occurred while processing your request.");
+      const errorMessage: ChatMessageData = {
+        sender: "ai",
+        content:
+          "An error occurred while processing your request. Please check the console.",
+        timestamp: new Date(),
+      };
+      setChatHistory((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
   }
 
+  const quickActions: QuickAction[] = [
+    {
+      label: "Summarize Text",
+      value: "Summarize the following text: ",
+      icon: <FiFileText />,
+    },
+    {
+      label: "Translate to Spanish",
+      value: "Translate the following to Spanish: ",
+      icon: <FiCommand />,
+    },
+    {
+      label: "Explain Code",
+      value: "Explain this code snippet: ",
+      icon: <FiCode />,
+    },
+    {
+      label: "List Tools",
+      value: "What tools do you have access to?",
+      icon: <FiLayers />,
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Head>
-        <title>AI Agent Interface</title>
+        <title>AI Agent Chat</title>
         <meta
           name="description"
-          content="Interface for interacting with AI Agent"
+          content="Chat interface for interacting with AI Agent"
         />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-center mb-8">
-          🔧 AI Agent Interface
-        </h1>
+      <header className="p-4 flex-shrink-0">
+        <motion.h1
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-xl md:text-2xl font-semibold text-center text-secondary-900"
+        >
+          <span className="text-primary-500">AI</span> Agent Assistant
+        </motion.h1>
+      </header>
 
-        <div className="bg-white shadow-md rounded-lg p-6 max-w-3xl mx-auto">
-          <div className="mb-4">
-            <label
-              htmlFor="prompt"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Ask your AI agent
-            </label>
-            <textarea
-              id="prompt"
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask your AI agent..."
-            />
+      <main className="flex-1 container mx-auto max-w-4xl px-4 pb-4">
+        {/* Chat Container */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="glass-panel rounded-2xl shadow-glass overflow-hidden"
+        >
+          {/* Messages Area */}
+          <div className="h-[70vh] overflow-y-auto p-4 space-y-4">
+            {chatHistory.map((message, index) => (
+              <ChatMessage
+                key={index}
+                sender={message.sender}
+                content={message.content}
+                timestamp={message.timestamp}
+              />
+            ))}
+            <div ref={chatEndRef} />
           </div>
 
-          <div className="flex justify-end">
-            <button
-              onClick={handleAsk}
-              disabled={isLoading || !input.trim()}
-              className={`px-4 py-2 rounded-md text-white font-medium ${
-                isLoading || !input.trim()
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              }`}
-            >
-              {isLoading ? "Processing..." : "Ask"}
-            </button>
-          </div>
-
-          {response && (
-            <div className="mt-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-2">
-                Response:
-              </h2>
-              <div className="bg-gray-50 p-4 rounded-md border border-gray-200 overflow-auto">
-                <pre className="whitespace-pre-wrap text-sm text-gray-800">
-                  {response}
-                </pre>
-              </div>
-            </div>
-          )}
-        </div>
+          {/* Input Area */}
+          <ChatInput
+            onSendMessage={handleSendMessage}
+            isLoading={isLoading}
+            quickActions={quickActions}
+          />
+        </motion.div>
       </main>
+
+      <footer className="py-3 text-center text-secondary-400 text-xs">
+        <p>
+          © {new Date().getFullYear()} AI Agent Interface • Built with Next.js
+        </p>
+      </footer>
     </div>
   );
 }
