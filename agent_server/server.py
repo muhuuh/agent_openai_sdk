@@ -3,25 +3,25 @@ from pydantic import BaseModel
 import os
 import openai
 from agents import Agent, Runner
-from dotenv import load_dotenv
+#from agents import RemoteTool
 
-# Load environment variables from .env file
+from dotenv import load_dotenv
 load_dotenv()
 
-# ✅ Import your tools
+# Import your tools
 from tools.local_files import list_files, read_file
 from tools.drive import list_drive_files, read_drive_file, upload_drive_file
 from tools.gmail import list_recent_emails, read_emails, send_email
-# Import the new calendar tools
 from tools.calendar import list_calendar_events, list_pending_invitations, respond_to_invitation, create_calendar_event
+from tools.weather import get_weather, get_hourly_forecast, get_daily_forecast
 
-# ✅ Set OpenRouter credentials
+# Set OpenRouter credentials
 openai.api_key = os.getenv("OPENROUTER_API_KEY")
 openai.base_url = os.getenv("OPENROUTER_BASE_URL")
 
 app = FastAPI()
 
-# ✅ Input structure for the /query route
+# Input structure for the /query route
 class Query(BaseModel):
     message: str
 
@@ -45,7 +45,6 @@ google_services_agent = Agent(
     ],
 )
 
-# Add the new Google Calendar Agent
 google_calendar_agent = Agent(
     name="GoogleCalendarAgent",
     instructions="Manages Google Calendar operations, like checking schedules, responding to invites, and creating new events.",
@@ -57,7 +56,17 @@ google_calendar_agent = Agent(
     ],
 )
 
-# ✅ Coordinator Agent
+day_to_day_agent = Agent(
+    name="DayToDayAgent",
+    instructions="Takes care of day to day related requests like weather forecast, news, etc.",
+    tools=[
+        get_weather,
+        get_hourly_forecast,
+        get_daily_forecast,
+    ],
+)
+
+# Coordinator Agent
 coordinator_agent = Agent(
     name="CoordinatorAgent",
     instructions="You are a master coordinator. Delegate tasks to the correct agent based on user request.",
@@ -65,17 +74,20 @@ coordinator_agent = Agent(
     handoffs=[
         local_files_agent,
         google_services_agent,
-        google_calendar_agent, # Add calendar agent here
+        google_calendar_agent,
+        day_to_day_agent,
     ],
     tools=[] # Coordinator might not need direct tools if just delegating
 )
 
-# ✅ FastAPI route to handle agent calls
+# FastAPI route to handle agent calls
 @app.post("/query")
 async def query_agent(query: Query):
-    # add API Key (Bearer Token when pushing to production)
     try:
+        print(f"[SERVER DEBUG] Incoming query: {query.message}")
         response = await Runner.run(coordinator_agent, query.message)
+        print(f"[SERVER DEBUG] Agent response: {response}")
         return {"response": response}
     except Exception as e:
+        print(f"[SERVER ERROR] Exception: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
