@@ -12,6 +12,8 @@ load_dotenv()
 from tools.local_files import list_files, read_file
 from tools.drive import list_drive_files, read_drive_file, upload_drive_file
 from tools.gmail import list_recent_emails, read_emails, send_email
+# Import the new calendar tools
+from tools.calendar import list_calendar_events, list_pending_invitations, respond_to_invitation
 
 # ✅ Set OpenRouter credentials
 openai.api_key = os.getenv("OPENROUTER_API_KEY")
@@ -43,6 +45,17 @@ google_services_agent = Agent(
     ],
 )
 
+# Add the new Google Calendar Agent
+google_calendar_agent = Agent(
+    name="GoogleCalendarAgent",
+    instructions="Manages Google Calendar operations, like checking schedules and responding to invites.",
+    tools=[
+        list_calendar_events,
+        list_pending_invitations,
+        respond_to_invitation,
+    ],
+)
+
 # ✅ Coordinator Agent
 coordinator_agent = Agent(
     name="CoordinatorAgent",
@@ -51,6 +64,7 @@ coordinator_agent = Agent(
     handoffs=[
         local_files_agent,
         google_services_agent,
+        google_calendar_agent, # Add calendar agent here
     ],
     tools=[] # Coordinator might not need direct tools if just delegating
 )
@@ -58,6 +72,7 @@ coordinator_agent = Agent(
 # ✅ FastAPI route to handle agent calls
 @app.post("/query")
 async def query_agent(query: Query):
+    # add API Key (Bearer Token when pushing to production)
     try:
         response = await Runner.run(coordinator_agent, query.message)
         return {"response": response}

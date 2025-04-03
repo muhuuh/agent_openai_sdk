@@ -10,7 +10,8 @@ load_dotenv()
 SCOPES = [
     'https://www.googleapis.com/auth/drive',
     'https://www.googleapis.com/auth/gmail.readonly',
-    'https://www.googleapis.com/auth/gmail.send'
+    'https://www.googleapis.com/auth/gmail.send',
+    'https://www.googleapis.com/auth/calendar'
 ]
 
 CREDENTIALS_PATH = os.getenv("GOOGLE_CREDENTIALS_PATH", "credentials.json")
@@ -62,3 +63,8 @@ def get_gmail_service():
     """Builds and returns a Gmail service client."""
     creds = _get_google_credentials()
     return build("gmail", "v1", credentials=creds)
+
+def get_calendar_service():
+    """Builds and returns a Google Calendar service client."""
+    creds = _get_google_credentials()
+    return build("calendar", "v3", credentials=creds)
