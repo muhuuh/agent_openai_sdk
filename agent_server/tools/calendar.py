@@ -171,4 +171,66 @@ def respond_to_invitation(event_id: str, response: str) -> dict:
         return {"error": f"Failed to respond to invitation: {error}"}
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+        return {"error": f"An unexpected error occurred: {e}"}
+
+
+@function_tool
+def create_calendar_event(summary: str, start_datetime: str, end_datetime: str, attendees: list[str] = None, description: str = None) -> dict:
+    """Creates a new event in the user's primary Google Calendar.
+    Args:
+        summary: The title or summary of the event.
+        start_datetime: The start date and time in ISO 8601 format (e.g., '2024-07-21T10:00:00+02:00' or '2024-07-21T10:00:00Z').
+        end_datetime: The end date and time in ISO 8601 format (e.g., '2024-07-21T11:00:00+02:00' or '2024-07-21T11:00:00Z').
+        attendees: A list of email addresses of people to invite. Can be None or empty.
+        description: An optional description or notes for the event.
+    """
+    service = get_calendar_service()
+
+    event_body = {
+        'summary': summary,
+        'description': description if description else '',
+        'start': {
+            'dateTime': start_datetime,
+            # 'timeZone': 'Your/Timezone' # Optional: Specify timezone if not included in datetime string
+        },
+        'end': {
+            'dateTime': end_datetime,
+            # 'timeZone': 'Your/Timezone' # Optional: Specify timezone if not included in datetime string
+        },
+        'attendees': [],
+        'reminders': {
+            'useDefault': True,
+        },
+    }
+
+    if attendees:
+        event_body['attendees'] = [{'email': email} for email in attendees]
+
+    print(f"Creating event: {summary} from {start_datetime} to {end_datetime}")
+    try:
+        # Use sendUpdates='all' to notify attendees
+        created_event = service.events().insert(
+            calendarId='primary', 
+            body=event_body,
+            sendUpdates='all' 
+        ).execute()
+        
+        print(f"Event created: {created_event.get('htmlLink')}")
+        return {"success": f"Event '{summary}' created successfully.", "event_link": created_event.get('htmlLink')}
+
+    except HttpError as error:
+        print(f"An error occurred: {error}")
+        error_details = error.resp.reason
+        try:
+            # Attempt to parse more specific error details from the response body
+            error_content = error.content.decode('utf-8')
+            import json
+            error_json = json.loads(error_content)
+            if 'error' in error_json and 'message' in error_json['error']:
+                error_details = error_json['error']['message']
+        except Exception:
+            pass # Stick with the reason if parsing fails
+        return {"error": f"Failed to create event: {error_details}"}
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
         return {"error": f"An unexpected error occurred: {e}"} 
