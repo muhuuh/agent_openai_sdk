@@ -13,6 +13,7 @@ def get_drive_file_id_by_name(service, name, parent_folder_id=None):
 
 @function_tool
 def list_drive_files(folder_name: str) -> list[dict]:
+    """Lists files within a specified Google Drive folder."""
     service = get_drive_service()
     folder_id = get_drive_file_id_by_name(service, folder_name) if folder_name else None
     query = f"'{folder_id}' in parents" if folder_id else None
@@ -21,6 +22,7 @@ def list_drive_files(folder_name: str) -> list[dict]:
 
 @function_tool
 def read_drive_file(file_name: str, folder_name: str) -> str:
+    """Reads the content of a specified file from Google Drive."""
     service = get_drive_service()
     folder_id = get_drive_file_id_by_name(service, folder_name) if folder_name else None
     file_id = get_drive_file_id_by_name(service, file_name, parent_folder_id=folder_id)
@@ -45,6 +47,7 @@ def read_drive_file(file_name: str, folder_name: str) -> str:
 
 @function_tool
 def upload_drive_file(file_path: str, drive_filename: str) -> str:
+    """Uploads a local file to Google Drive with a specified name."""
     service = get_drive_service()
     media = MediaFileUpload(file_path, resumable=True)
     file_metadata = {"name": drive_filename}

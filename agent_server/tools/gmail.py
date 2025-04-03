@@ -6,6 +6,7 @@ from tools.auth import get_gmail_service
 
 @function_tool
 def list_recent_emails(max_results: int) -> list[dict]:
+    """Lists recent emails from the user's Gmail account."""
     gmail = get_gmail_service()
     results = gmail.users().messages().list(userId="me", maxResults=max_results).execute()
     messages = results.get("messages", [])
@@ -23,6 +24,7 @@ def list_recent_emails(max_results: int) -> list[dict]:
 
 @function_tool
 def read_emails(max_results: int, sender: str = None, since_days: int = None) -> list[dict]:
+    """Reads emails from the user's Gmail account, optionally filtering by sender and time."""
     gmail = get_gmail_service()
     query_parts = []
     if sender:
@@ -50,6 +52,7 @@ def read_emails(max_results: int, sender: str = None, since_days: int = None) ->
 
 @function_tool
 def send_email(to: str, subject: str, body: str) -> str:
+    """Sends an email using the user's Gmail account."""
     gmail = get_gmail_service()
     message = MIMEText(body)
     message["to"] = to
