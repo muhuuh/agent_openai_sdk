@@ -5,6 +5,9 @@ import { FiCommand, FiFileText, FiCode, FiLayers } from "react-icons/fi";
 import ChatMessage from "../components/ChatMessage";
 import ChatInput from "../components/ChatInput";
 import LoadingMessage from "../components/LoadingMessage";
+import NavBar from "../components/NavBar";
+import { useRouter } from "next/router";
+import { useAuth } from "../context/AuthContext";
 
 interface ChatMessageData {
   sender: "user" | "ai";
@@ -15,10 +18,11 @@ interface ChatMessageData {
 interface QuickAction {
   label: string;
   value: string;
-  icon?: React.ReactNode;
+  icon: React.ReactNode;
 }
 
 export default function Home() {
+  const { user, signOut } = useAuth();
   const [chatHistory, setChatHistory] = useState<ChatMessageData[]>([
     {
       sender: "ai",
@@ -29,6 +33,7 @@ export default function Home() {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const chatEndRef = useRef<null | HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -49,7 +54,10 @@ export default function Home() {
       const res = await fetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage.content }),
+        body: JSON.stringify({
+          message: userMessage.content,
+          user_id: user?.id, // Include user ID if available
+        }),
       });
 
       const data = await res.json();
@@ -73,6 +81,15 @@ export default function Home() {
       setIsLoading(false);
     }
   }
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      // You might want to redirect or update UI state here
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
 
   const quickActions: QuickAction[] = [
     {
@@ -108,27 +125,15 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <header className="p-6 flex-shrink-0">
-        <motion.h1
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-xl md:text-2xl font-semibold text-center text-secondary-900"
-        >
-          <span className="text-primary-500 bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-violet-500">
-            AI
-          </span>{" "}
-          Agent Assistant
-        </motion.h1>
-      </header>
+      <NavBar userEmail={user?.email} onLogout={handleLogout} />
 
-      <main className="flex-1 container mx-auto max-w-4xl px-4 pb-4">
+      <main className="flex-1 container mx-auto px-4 py-6 flex items-center justify-center">
         {/* Chat Container */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="glass-panel rounded-2xl shadow-glass overflow-hidden border border-white border-opacity-40"
+          className="glass-panel rounded-2xl shadow-glass overflow-hidden border border-white border-opacity-40 w-full max-w-4xl"
         >
           {/* Messages Area */}
           <div className="h-[70vh] overflow-y-auto p-4 space-y-4">

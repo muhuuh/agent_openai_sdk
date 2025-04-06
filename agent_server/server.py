@@ -24,6 +24,7 @@ app = FastAPI()
 # Input structure for the /query route
 class Query(BaseModel):
     message: str
+    user_id: str = None
 
 # Define sub-agents directly (no @handoff)
 local_files_agent = Agent(
@@ -92,7 +93,14 @@ coordinator_agent = Agent(
 async def query_agent(query: Query):
     try:
         print(f"[SERVER DEBUG] Incoming query: {query.message}")
-        response = await Runner.run(coordinator_agent, query.message)
+        print(f"[SERVER DEBUG] User ID: {query.user_id or 'Not provided'}")
+        
+        # If a user_id is provided, make it available to the agents
+        context = {}
+        if query.user_id:
+            context["user_id"] = query.user_id
+        
+        response = await Runner.run(coordinator_agent, query.message, context=context)
         print(f"[SERVER DEBUG] Agent response: {response}")
         return {"response": response}
     except Exception as e:

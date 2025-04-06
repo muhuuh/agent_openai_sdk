@@ -4,9 +4,9 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const userMessage = req.body.message;
+  const { message, user_id } = req.body;
 
-  if (!userMessage) {
+  if (!message) {
     return res.status(400).json({ error: "No message provided" });
   }
 
@@ -14,7 +14,10 @@ export default async function handler(
     const response = await fetch("http://localhost:8000/query", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: userMessage }),
+      body: JSON.stringify({
+        message: message,
+        user_id: user_id || null, // Forward user ID if available
+      }),
     });
 
     const data = await response.json();
