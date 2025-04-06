@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { FiCommand, FiFileText, FiCode, FiLayers } from "react-icons/fi";
 import ChatMessage from "../components/ChatMessage";
 import ChatInput from "../components/ChatInput";
+import LoadingMessage from "../components/LoadingMessage";
 
 interface ChatMessageData {
   sender: "user" | "ai";
@@ -75,23 +76,23 @@ export default function Home() {
 
   const quickActions: QuickAction[] = [
     {
-      label: "Summarize Text",
-      value: "Summarize the following text: ",
+      label: "Email Summary",
+      value: "Summarize the emails I received from yesterday",
       icon: <FiFileText />,
     },
     {
-      label: "Translate to Spanish",
-      value: "Translate the following to Spanish: ",
+      label: "Today's Meetings",
+      value: "Please tell me which meetings I have today",
       icon: <FiCommand />,
     },
     {
-      label: "Explain Code",
-      value: "Explain this code snippet: ",
+      label: "Find File",
+      value: 'Please find file named "" in my drive',
       icon: <FiCode />,
     },
     {
-      label: "List Tools",
-      value: "What tools do you have access to?",
+      label: "List Drive Files",
+      value: "List the files I currently have saved on my Google Drive",
       icon: <FiLayers />,
     },
   ];
@@ -136,6 +137,7 @@ export default function Home() {
                 timestamp={message.timestamp}
               />
             ))}
+            {isLoading && <LoadingMessage />}
             <div ref={chatEndRef} />
           </div>
 
