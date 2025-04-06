@@ -32,10 +32,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         {/* Avatar */}
         <div className={`flex-shrink-0 ${isUser ? "ml-3" : "mr-3"}`}>
           <div
-            className={`w-10 h-10 rounded-full flex items-center justify-center ${
+            className={`w-10 h-10 rounded-full flex items-center justify-center shadow-sm ${
               isUser
-                ? "bg-primary-100 text-primary-600"
-                : "bg-secondary-100 text-secondary-600"
+                ? "bg-gradient-to-br from-primary-100 to-primary-200 text-primary-600"
+                : "bg-gradient-to-br from-blue-100 to-violet-200 text-secondary-600"
             }`}
           >
             {isUser ? <FiUser size={18} /> : <FiCpu size={18} />}
@@ -45,8 +45,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         {/* Message content */}
         <div>
           <div
-            className={`rounded-2xl px-4 py-3 ${
-              isUser ? "bg-primary-500 text-white" : "glass-panel"
+            className={`rounded-2xl px-4 py-3 shadow-sm ${
+              isUser
+                ? "bg-gradient-to-br from-primary-500 to-primary-600 text-white"
+                : "glass-panel border border-white border-opacity-20"
             }`}
           >
             {sender === "ai" ? (
@@ -60,20 +62,20 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                         {...props}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary-500 hover:text-primary-600"
+                        className="text-primary-500 hover:text-primary-600 underline decoration-dotted"
                       />
                     ),
                     // Custom styling for code blocks
                     pre: ({ node, ...props }) => (
                       <pre
-                        className="bg-secondary-100 p-2 rounded-lg text-secondary-800 overflow-x-auto"
+                        className="bg-white bg-opacity-20 backdrop-blur-sm p-3 rounded-lg text-secondary-800 overflow-x-auto border border-white border-opacity-10"
                         {...props}
                       />
                     ),
                     code: ({ node, ...props }) => {
                       return (
                         <code
-                          className="bg-secondary-100 text-secondary-800 px-1 py-0.5 rounded text-sm"
+                          className="bg-white bg-opacity-20 backdrop-blur-sm text-secondary-800 px-1 py-0.5 rounded text-sm"
                           {...props}
                         />
                       );

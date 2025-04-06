@@ -13,21 +13,21 @@ const LoadingMessage: React.FC = () => {
       <div className="flex max-w-[85%] flex-row">
         {/* Avatar */}
         <div className="flex-shrink-0 mr-3">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-secondary-100 text-secondary-600">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-blue-100 to-violet-200 text-secondary-600">
             <FiCpu size={18} />
           </div>
         </div>
 
         {/* Loading indicator */}
         <div>
-          <div className="rounded-2xl px-4 py-3 glass-panel">
+          <div className="rounded-2xl px-4 py-3 glass-panel border border-white border-opacity-20 shadow-sm">
             <div className="flex items-center">
               <div className="typing-indicator">
                 <span></span>
                 <span></span>
                 <span></span>
               </div>
-              <span className="ml-2 text-secondary-500 text-sm">
+              <span className="ml-2 text-secondary-500 text-sm font-medium">
                 AI is thinking...
               </span>
             </div>

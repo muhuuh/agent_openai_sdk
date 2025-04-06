@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { FiSend, FiLoader } from "react-icons/fi";
+import { FiSend, FiLoader, FiChevronRight } from "react-icons/fi";
 
 interface QuickAction {
   label: string;
@@ -58,17 +58,21 @@ const ChatInput: React.FC<ChatInputProps> = ({
           <button
             key={index}
             onClick={() => handleQuickAction(action.value)}
-            className="btn-secondary flex items-center text-sm"
+            className="btn-secondary flex items-center text-sm relative group overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
             disabled={isLoading}
           >
-            {action.icon && <span className="mr-2">{action.icon}</span>}
-            {action.label}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-violet-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative z-10 flex items-center">
+              {action.icon && <span className="mr-2">{action.icon}</span>}
+              {action.label}
+              <FiChevronRight className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </div>
           </button>
         ))}
       </div>
 
       {/* Input Textarea and Send Button */}
-      <div className="bg-white bg-opacity-80 backdrop-blur-lg rounded-xl shadow-soft border border-secondary-100 p-2">
+      <div className="bg-white bg-opacity-80 backdrop-blur-lg rounded-xl shadow-md border border-white border-opacity-40 p-2">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -81,7 +85,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask your AI agent... (Shift+Enter for new line)"
+            placeholder="Ask your AI assistant..."
             className="flex-1 resize-none max-h-[120px] border-0 outline-none focus:ring-0 bg-transparent p-2 text-secondary-800"
             rows={1}
             disabled={isLoading}
@@ -89,7 +93,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           <div className="p-1">
             <button
               type="submit"
-              className="p-2 rounded-full bg-primary-500 text-white hover:bg-primary-600 transition-colors disabled:opacity-70"
+              className="p-3 rounded-full bg-gradient-to-r from-primary-500 to-violet-500 text-white hover:shadow-lg transition-all duration-300 disabled:opacity-70 disabled:shadow-none"
               disabled={!inputValue.trim() || isLoading}
             >
               {isLoading ? <FiLoader className="animate-spin" /> : <FiSend />}

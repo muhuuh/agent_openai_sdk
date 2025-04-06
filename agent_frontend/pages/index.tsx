@@ -23,7 +23,7 @@ export default function Home() {
     {
       sender: "ai",
       content:
-        "👋 Hello! I'm an AI assistant that can help you with various tasks. How can I assist you today?",
+        "✨ **Welcome to your AI Assistant!** I'm here to help you with emails, meetings, files, and more. How may I assist you today?",
       timestamp: new Date(),
     },
   ]);
@@ -77,7 +77,7 @@ export default function Home() {
   const quickActions: QuickAction[] = [
     {
       label: "Email Summary",
-      value: "Summarize the emails I received from yesterday",
+      value: "Please summarise my last 3 emails",
       icon: <FiFileText />,
     },
     {
@@ -98,7 +98,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-violet-50">
       <Head>
         <title>AI Agent Chat</title>
         <meta
@@ -108,14 +108,17 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <header className="p-4 flex-shrink-0">
+      <header className="p-6 flex-shrink-0">
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="text-xl md:text-2xl font-semibold text-center text-secondary-900"
         >
-          <span className="text-primary-500">AI</span> Agent Assistant
+          <span className="text-primary-500 bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-violet-500">
+            AI
+          </span>{" "}
+          Agent Assistant
         </motion.h1>
       </header>
 
@@ -125,7 +128,7 @@ export default function Home() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="glass-panel rounded-2xl shadow-glass overflow-hidden"
+          className="glass-panel rounded-2xl shadow-glass overflow-hidden border border-white border-opacity-40"
         >
           {/* Messages Area */}
           <div className="h-[70vh] overflow-y-auto p-4 space-y-4">
