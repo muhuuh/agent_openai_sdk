@@ -6,7 +6,25 @@ type AuthContextType = {
   user: User | null;
   supabase: SupabaseClient;
   loading: boolean;
+  signIn: (
+    email: string,
+    password: string
+  ) => Promise<{
+    success: boolean;
+    error?: string;
+  }>;
+  signUp: (
+    email: string,
+    password: string
+  ) => Promise<{
+    success: boolean;
+    error?: string;
+  }>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{
+    success: boolean;
+    error?: string;
+  }>;
   getUserId: () => string | null;
 };
 
@@ -64,8 +82,74 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [supabase]);
 
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Sign in error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  };
+
+  const signUp = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Sign up error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  };
+
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error("Sign out error:", error);
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Reset password error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
   };
 
   const getUserId = () => {
@@ -77,7 +161,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     user,
     supabase,
     loading,
+    signIn,
+    signUp,
     signOut,
+    resetPassword,
     getUserId,
   };
 
