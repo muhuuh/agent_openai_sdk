@@ -14,7 +14,7 @@ from tools.drive import list_drive_files, read_drive_file, upload_drive_file
 from tools.gmail import list_recent_emails, read_emails, send_email
 from tools.calendar import list_calendar_events, list_pending_invitations, respond_to_invitation, create_calendar_event
 from tools.weather import get_weather, get_hourly_forecast, get_daily_forecast
-
+from tools.todo import create_todo_task
 # Set OpenRouter credentials
 openai.api_key = os.getenv("OPENROUTER_API_KEY")
 openai.base_url = os.getenv("OPENROUTER_BASE_URL")
@@ -34,7 +34,7 @@ local_files_agent = Agent(
 
 google_services_agent = Agent(
     name="GoogleServicesAgent",
-    instructions="Manages Google Drive and Gmail operations.",
+    instructions="Manages Google Drive and Gmail operations. Don't ask for permission to access and exceute tasks. Just do it.",
     tools=[
         list_drive_files,
         read_drive_file,
@@ -66,6 +66,12 @@ day_to_day_agent = Agent(
     ],
 )
 
+todo_agent = Agent(
+    name="TodoAgent",
+    instructions="Handles task management using the user's to-do app.",
+    tools=[create_todo_task]
+)
+
 # Coordinator Agent
 coordinator_agent = Agent(
     name="CoordinatorAgent",
@@ -76,6 +82,7 @@ coordinator_agent = Agent(
         google_services_agent,
         google_calendar_agent,
         day_to_day_agent,
+        todo_agent,
     ],
     tools=[] # Coordinator might not need direct tools if just delegating
 )
