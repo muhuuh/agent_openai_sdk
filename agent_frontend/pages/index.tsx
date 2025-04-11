@@ -11,6 +11,7 @@ import {
   FiLock,
   FiKey,
   FiPlusCircle,
+  FiSend,
 } from "react-icons/fi";
 import ChatMessage from "../components/ChatMessage";
 import ChatInput from "../components/ChatInput";
@@ -140,28 +141,47 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   currentSessionId,
 }) => {
   const chatEndRef = useRef<null | HTMLDivElement>(null);
+  const [inputValue, setInputValue] = useState("");
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatHistory]);
+
+  const handleQuickActionClick = (text: string) => {
+    setInputValue(text);
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="glass-panel rounded-2xl shadow-glass overflow-hidden border border-white border-opacity-40 w-full max-w-4xl"
+      className="glass-panel rounded-2xl shadow-glass overflow-hidden border border-white border-opacity-40 w-full max-w-4xl flex flex-col"
     >
       {/* Messages Area */}
-      <div className="h-[70vh] overflow-y-auto p-4 space-y-4">
+      <div className="h-[70vh] overflow-y-auto p-4 space-y-4 bg-gradient-to-br from-blue-50/70 via-indigo-50/70 to-violet-50/70">
         {chatHistory.length === 0 && !isLoading ? (
           <div className="flex items-center justify-center h-full text-center">
-            <div className="text-secondary-500">
+            <div className="text-secondary-500 bg-white bg-opacity-50 p-6 rounded-2xl shadow-sm max-w-md">
               <FiMessageCircle className="text-4xl mx-auto mb-4 text-primary-500" />
               <h3 className="text-xl font-medium mb-2">Start a conversation</h3>
-              <p className="max-w-md text-sm">
+              <p className="max-w-sm text-sm">
                 Ask me anything about your tasks, emails, files, or meetings.
+                I'm here to help you stay organized and productive.
               </p>
+
+              <div className="grid grid-cols-2 gap-2 mt-6">
+                {quickActions.slice(0, 4).map((action, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleQuickActionClick(action.value)}
+                    className="flex items-center justify-center bg-white bg-opacity-70 hover:bg-opacity-100 text-secondary-700 text-sm px-3 py-2 rounded-lg border border-white border-opacity-50 transition-all hover:shadow-md"
+                  >
+                    <span className="mr-2 text-primary-500">{action.icon}</span>
+                    {action.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         ) : (
@@ -180,12 +200,67 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <div ref={chatEndRef} />
       </div>
 
-      {/* Input Area */}
-      <ChatInput
-        onSendMessage={onSendMessage}
-        isLoading={isLoading}
-        quickActions={quickActions}
-      />
+      {/* Input Area with Quick Actions */}
+      <div className="border-t border-white border-opacity-20 bg-white bg-opacity-50 backdrop-blur-md">
+        <div className="px-2 py-2 flex flex-wrap gap-2 justify-center">
+          {quickActions.map((action, idx) => (
+            <button
+              key={idx}
+              onClick={() => handleQuickActionClick(action.value)}
+              className="relative overflow-hidden group flex items-center text-xs text-secondary-700 bg-white bg-opacity-70 px-3 py-1.5 rounded-full border border-white border-opacity-40 transition-all hover:shadow-sm"
+            >
+              {/* Gradient background on hover */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-violet-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <span className="mr-1.5 text-primary-500 relative z-10">
+                {action.icon}
+              </span>
+              <span className="relative z-10">{action.label}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="px-4 py-3 relative">
+          <div className="flex items-end bg-white rounded-2xl shadow-sm transition-all border border-white border-opacity-60 pr-2">
+            <textarea
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  if (inputValue.trim() && !isLoading) {
+                    onSendMessage(inputValue);
+                    setInputValue("");
+                  }
+                }
+              }}
+              placeholder="Type a message..."
+              disabled={isLoading}
+              className="flex-1 py-3 pl-4 pr-2 resize-none bg-transparent outline-none text-secondary-800 text-sm max-h-[120px] min-h-[48px]"
+              rows={1}
+            />
+
+            <div className="flex items-center">
+              <button
+                onClick={() => {
+                  if (inputValue.trim() && !isLoading) {
+                    onSendMessage(inputValue);
+                    setInputValue("");
+                  }
+                }}
+                className={`p-2.5 rounded-full flex items-center justify-center ${
+                  inputValue.trim() && !isLoading
+                    ? "bg-primary-500 text-white hover:bg-primary-600"
+                    : "bg-secondary-200 text-secondary-400 cursor-not-allowed"
+                }`}
+                disabled={!inputValue.trim() || isLoading}
+                title="Send message"
+              >
+                <FiSend size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </motion.div>
   );
 };

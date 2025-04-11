@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiPlus, FiMessageSquare, FiTrash2, FiEdit2 } from "react-icons/fi";
+import {
+  FiPlus,
+  FiMessageSquare,
+  FiTrash2,
+  FiEdit2,
+  FiMessageCircle,
+} from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 
 interface ChatSession {
@@ -125,17 +131,17 @@ const ChatSessionsList: React.FC<ChatSessionsListProps> = ({
   };
 
   return (
-    <div className="w-full bg-white bg-opacity-20 backdrop-blur-lg rounded-xl p-4 shadow-sm border border-white border-opacity-40">
+    <div className="w-full bg-white bg-opacity-20 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-white border-opacity-30">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold text-secondary-800">
           Chat Sessions
         </h2>
         <button
           onClick={onNewSession}
-          className="btn-primary p-2 rounded-full"
+          className="p-2 rounded-full bg-indigo-500 text-white shadow-sm hover:bg-indigo-600 transition-colors"
           aria-label="New chat session"
         >
-          <FiPlus />
+          <FiPlus size={18} />
         </button>
       </div>
 
@@ -144,8 +150,10 @@ const ChatSessionsList: React.FC<ChatSessionsListProps> = ({
           Loading sessions...
         </div>
       ) : sessions.length === 0 ? (
-        <div className="text-center py-4 text-secondary-500">
-          No chat sessions yet. Start a new chat!
+        <div className="text-center py-8 text-secondary-500">
+          <FiMessageCircle className="mx-auto mb-2 text-3xl text-secondary-400" />
+          <p>No chat sessions yet.</p>
+          <p>Start a new chat!</p>
         </div>
       ) : (
         <ul className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
@@ -158,14 +166,20 @@ const ChatSessionsList: React.FC<ChatSessionsListProps> = ({
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.2 }}
                 onClick={() => onSessionSelect(session.id)}
-                className={`rounded-lg p-3 flex justify-between items-center cursor-pointer transition-colors ${
+                className={`rounded-lg px-4 py-3 flex justify-between items-center cursor-pointer transition-colors ${
                   currentSessionId === session.id
-                    ? "bg-primary-100 border border-primary-300"
-                    : "hover:bg-white hover:bg-opacity-30 border border-transparent"
+                    ? "bg-indigo-100/70 border border-indigo-200"
+                    : "bg-white/50 hover:bg-white/70 border border-transparent hover:border-indigo-100"
                 }`}
               >
                 <div className="flex items-center flex-1 min-w-0">
-                  <FiMessageSquare className="text-secondary-600 mr-2 flex-shrink-0" />
+                  <FiMessageSquare
+                    className={`mr-3 flex-shrink-0 ${
+                      currentSessionId === session.id
+                        ? "text-indigo-600"
+                        : "text-secondary-500"
+                    }`}
+                  />
 
                   {editingSession === session.id ? (
                     <form
@@ -177,30 +191,30 @@ const ChatSessionsList: React.FC<ChatSessionsListProps> = ({
                         value={editTitle}
                         onChange={(e) => setEditTitle(e.target.value)}
                         autoFocus
-                        className="w-full px-2 py-1 text-sm bg-white bg-opacity-50 rounded border border-secondary-300 focus:outline-none focus:border-primary-500"
+                        className="w-full px-2 py-1 text-sm bg-white rounded border border-indigo-200 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-300"
                         onClick={(e) => e.stopPropagation()}
                       />
                     </form>
                   ) : (
-                    <div className="truncate flex-1 text-secondary-800">
+                    <div className="truncate flex-1 text-secondary-800 font-medium">
                       {session.title || "Untitled Chat"}
                     </div>
                   )}
                 </div>
 
-                <div className="flex space-x-1 ml-2">
+                <div className="flex space-x-0.5 ml-2 opacity-60 hover:opacity-100 transition-opacity">
                   <button
                     onClick={(e) =>
                       handleStartEdit(session.id, session.title, e)
                     }
-                    className="p-1.5 text-secondary-500 hover:text-secondary-700 rounded-full hover:bg-white hover:bg-opacity-30"
+                    className="p-1.5 text-secondary-600 hover:text-secondary-800 rounded-full hover:bg-white"
                     aria-label="Edit title"
                   >
                     <FiEdit2 size={14} />
                   </button>
                   <button
                     onClick={(e) => handleDeleteSession(session.id, e)}
-                    className="p-1.5 text-secondary-500 hover:text-red-600 rounded-full hover:bg-white hover:bg-opacity-30"
+                    className="p-1.5 text-secondary-600 hover:text-red-600 rounded-full hover:bg-white"
                     aria-label="Delete session"
                   >
                     <FiTrash2 size={14} />
