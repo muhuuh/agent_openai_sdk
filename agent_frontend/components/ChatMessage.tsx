@@ -33,38 +33,38 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         {...props}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-primary-500 hover:text-primary-600 underline decoration-dotted"
+        className="text-indigo-500 hover:text-indigo-600 underline decoration-dotted"
       />
     ),
     // Custom styling for code blocks
     pre: (props) => (
       <pre
-        className="bg-white bg-opacity-10 backdrop-blur-sm p-3 my-2 rounded-lg text-secondary-800 overflow-x-auto border border-white border-opacity-10 font-mono text-sm"
+        className="bg-gray-50 p-3 my-2 rounded-lg text-gray-800 overflow-x-auto border border-gray-100 font-mono text-sm"
         {...props}
       />
     ),
     code: (props) => (
       <code
-        className="bg-white bg-opacity-20 backdrop-blur-sm text-secondary-800 px-1 py-0.5 rounded text-sm font-mono"
+        className="bg-gray-50 text-gray-800 px-1 py-0.5 rounded text-sm font-mono"
         {...props}
       />
     ),
     // Enhanced heading styles
     h1: (props) => (
       <h1
-        className="text-xl font-semibold text-secondary-800 mt-3 mb-2"
+        className="text-xl font-semibold text-gray-800 mt-3 mb-2"
         {...props}
       />
     ),
     h2: (props) => (
       <h2
-        className="text-lg font-semibold text-secondary-800 mt-3 mb-2"
+        className="text-lg font-semibold text-gray-800 mt-3 mb-2"
         {...props}
       />
     ),
     h3: (props) => (
       <h3
-        className="text-base font-semibold text-secondary-800 mt-2 mb-1"
+        className="text-base font-semibold text-gray-800 mt-2 mb-1"
         {...props}
       />
     ),
@@ -74,7 +74,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       <ol className="list-decimal pl-5 my-2 space-y-1" {...props} />
     ),
     // Enhanced paragraph spacing
-    p: (props) => <p className="my-1.5 text-secondary-700" {...props} />,
+    p: (props) => <p className="my-1.5 text-gray-700" {...props} />,
     // Special styling for list items
     li: ({ children, ...props }) => {
       // Check if this is potentially an email summary item
@@ -101,7 +101,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     },
     // Enhanced styling for strong/bold text
     strong: (props) => (
-      <strong className="font-semibold text-secondary-900" {...props} />
+      <strong className="font-semibold text-gray-900" {...props} />
     ),
   };
 
@@ -134,9 +134,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         {/* Avatar */}
         <div className={`flex-shrink-0 ${isUser ? "ml-3" : "mr-3"}`}>
           <div
-            className={`w-10 h-10 rounded-full flex items-center justify-center shadow-md ${
+            className={`w-10 h-10 rounded-full flex items-center justify-center ${
               isUser
-                ? "bg-gradient-to-br from-primary-400 to-primary-500 text-white"
+                ? "bg-gradient-to-br from-blue-400 to-violet-500 text-white"
                 : "bg-gradient-to-br from-blue-400 to-violet-500 text-white"
             }`}
           >
@@ -147,10 +147,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         {/* Message content */}
         <div className="max-w-full">
           <div
-            className={`rounded-2xl px-5 py-3.5 shadow-md ${
+            className={`rounded-2xl px-5 py-3.5 ${
               isUser
-                ? "bg-gradient-to-br from-primary-500 to-primary-600 text-white"
-                : "bg-white bg-opacity-90 border border-white border-opacity-40 text-secondary-800"
+                ? "bg-indigo-500 text-white"
+                : "bg-white border border-gray-200 text-gray-800"
             }`}
           >
             {sender === "ai" ? (
@@ -171,7 +171,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
           {/* Timestamp */}
           <div
-            className={`text-xs text-secondary-400 mt-1.5 ${
+            className={`text-xs text-gray-400 mt-1.5 ${
               isUser ? "text-right" : "text-left"
             }`}
           >

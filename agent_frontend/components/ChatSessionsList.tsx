@@ -131,14 +131,14 @@ const ChatSessionsList: React.FC<ChatSessionsListProps> = ({
   };
 
   return (
-    <div className="w-full bg-white bg-opacity-20 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-white border-opacity-30">
+    <div className="w-full bg-white rounded-3xl p-4 shadow-sm border border-gray-200">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-secondary-800">
+        <h2 className="text-lg font-semibold text-gray-700 px-2">
           Chat Sessions
         </h2>
         <button
           onClick={onNewSession}
-          className="p-2 rounded-full bg-indigo-500 text-white shadow-sm hover:bg-indigo-600 transition-colors"
+          className="p-2 rounded-full bg-gradient-to-br from-blue-400 to-violet-500 text-white shadow-sm hover:shadow-md transition-all"
           aria-label="New chat session"
         >
           <FiPlus size={18} />
@@ -146,12 +146,12 @@ const ChatSessionsList: React.FC<ChatSessionsListProps> = ({
       </div>
 
       {loading ? (
-        <div className="text-center py-4 text-secondary-500">
+        <div className="text-center py-4 text-gray-500">
           Loading sessions...
         </div>
       ) : sessions.length === 0 ? (
-        <div className="text-center py-8 text-secondary-500">
-          <FiMessageCircle className="mx-auto mb-2 text-3xl text-secondary-400" />
+        <div className="text-center py-8 text-gray-500">
+          <FiMessageCircle className="mx-auto mb-2 text-3xl text-gray-400" />
           <p>No chat sessions yet.</p>
           <p>Start a new chat!</p>
         </div>
@@ -168,8 +168,8 @@ const ChatSessionsList: React.FC<ChatSessionsListProps> = ({
                 onClick={() => onSessionSelect(session.id)}
                 className={`rounded-lg px-4 py-3 flex justify-between items-center cursor-pointer transition-colors ${
                   currentSessionId === session.id
-                    ? "bg-indigo-100/70 border border-indigo-200"
-                    : "bg-white/50 hover:bg-white/70 border border-transparent hover:border-indigo-100"
+                    ? "bg-blue-50 border border-blue-200"
+                    : "bg-white hover:bg-blue-50 border border-transparent"
                 }`}
               >
                 <div className="flex items-center flex-1 min-w-0">
@@ -177,7 +177,7 @@ const ChatSessionsList: React.FC<ChatSessionsListProps> = ({
                     className={`mr-3 flex-shrink-0 ${
                       currentSessionId === session.id
                         ? "text-indigo-600"
-                        : "text-secondary-500"
+                        : "text-gray-500"
                     }`}
                   />
 
@@ -196,25 +196,25 @@ const ChatSessionsList: React.FC<ChatSessionsListProps> = ({
                       />
                     </form>
                   ) : (
-                    <div className="truncate flex-1 text-secondary-800 font-medium">
+                    <div className="truncate flex-1 text-gray-700 font-medium">
                       {session.title || "Untitled Chat"}
                     </div>
                   )}
                 </div>
 
-                <div className="flex space-x-0.5 ml-2 opacity-60 hover:opacity-100 transition-opacity">
+                <div className="flex space-x-1 ml-2">
                   <button
                     onClick={(e) =>
                       handleStartEdit(session.id, session.title, e)
                     }
-                    className="p-1.5 text-secondary-600 hover:text-secondary-800 rounded-full hover:bg-white"
+                    className="p-1.5 text-gray-400 hover:text-indigo-600 rounded-full hover:bg-gray-100"
                     aria-label="Edit title"
                   >
                     <FiEdit2 size={14} />
                   </button>
                   <button
                     onClick={(e) => handleDeleteSession(session.id, e)}
-                    className="p-1.5 text-secondary-600 hover:text-red-600 rounded-full hover:bg-white"
+                    className="p-1.5 text-gray-400 hover:text-red-600 rounded-full hover:bg-gray-100"
                     aria-label="Delete session"
                   >
                     <FiTrash2 size={14} />

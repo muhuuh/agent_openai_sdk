@@ -156,10 +156,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="glass-panel rounded-2xl shadow-glass overflow-hidden border border-white border-opacity-40 w-full max-w-4xl flex flex-col"
+      className="rounded-3xl shadow-sm overflow-hidden border border-gray-200 w-full max-w-4xl flex flex-col bg-white"
     >
       {/* Messages Area */}
-      <div className="h-[70vh] overflow-y-auto p-4 space-y-4 bg-gradient-to-br from-blue-50/70 via-indigo-50/70 to-violet-50/70">
+      <div className="h-[70vh] overflow-y-auto p-4 space-y-4 bg-white">
         {chatHistory.length === 0 && !isLoading ? (
           <div className="flex items-center justify-center h-full text-center">
             <div className="text-secondary-500 bg-white bg-opacity-50 p-6 rounded-2xl shadow-sm max-w-md">
@@ -200,64 +200,69 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <div ref={chatEndRef} />
       </div>
 
-      {/* Input Area with Quick Actions */}
-      <div className="border-t border-white border-opacity-20 bg-white bg-opacity-50 backdrop-blur-md">
-        <div className="px-2 py-2 flex flex-wrap gap-2 justify-center">
-          {quickActions.map((action, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleQuickActionClick(action.value)}
-              className="relative overflow-hidden group flex items-center text-xs text-secondary-700 bg-white bg-opacity-70 px-3 py-1.5 rounded-full border border-white border-opacity-40 transition-all hover:shadow-sm"
-            >
-              {/* Gradient background on hover */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-violet-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <span className="mr-1.5 text-primary-500 relative z-10">
-                {action.icon}
-              </span>
-              <span className="relative z-10">{action.label}</span>
-            </button>
-          ))}
-        </div>
+      {/* Quick action buttons below chat */}
+      <div className="flex flex-wrap gap-2 justify-center px-4 py-3 border-t border-gray-100">
+        {quickActions.map((action, idx) => (
+          <button
+            key={idx}
+            onClick={() => handleQuickActionClick(action.value)}
+            className="relative overflow-hidden group flex items-center text-xs text-gray-600 bg-blue-50 px-3 py-2 rounded-lg hover:bg-blue-100 transition-colors"
+          >
+            {/* Gradient background on hover */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-violet-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <span className="mr-2 text-indigo-500 relative z-10">
+              {action.icon}
+            </span>
+            <span className="relative z-10">{action.label}</span>
+          </button>
+        ))}
+      </div>
 
-        <div className="px-4 py-3 relative">
-          <div className="flex items-end bg-white rounded-2xl shadow-sm transition-all border border-white border-opacity-60 pr-2">
-            <textarea
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  if (inputValue.trim() && !isLoading) {
-                    onSendMessage(inputValue);
-                    setInputValue("");
-                  }
+      {/* Input Area */}
+      <div className="px-4 py-4 bg-white border-t border-gray-100">
+        <div className="flex items-center bg-white rounded-full border border-gray-200 shadow-sm">
+          <textarea
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (inputValue.trim() && !isLoading) {
+                  onSendMessage(inputValue);
+                  setInputValue("");
+                }
+              }
+            }}
+            placeholder="Ask your AI assistant..."
+            disabled={isLoading}
+            className="flex-1 py-3 pl-4 pr-2 resize-none bg-transparent outline-none text-gray-700 text-sm min-h-[24px] max-h-[120px]"
+            rows={1}
+          />
+
+          <div className="pr-2">
+            <button
+              onClick={() => {
+                if (inputValue.trim() && !isLoading) {
+                  onSendMessage(inputValue);
+                  setInputValue("");
                 }
               }}
-              placeholder="Type a message..."
-              disabled={isLoading}
-              className="flex-1 py-3 pl-4 pr-2 resize-none bg-transparent outline-none text-secondary-800 text-sm max-h-[120px] min-h-[48px]"
-              rows={1}
-            />
-
-            <div className="flex items-center">
-              <button
-                onClick={() => {
-                  if (inputValue.trim() && !isLoading) {
-                    onSendMessage(inputValue);
-                    setInputValue("");
-                  }
-                }}
-                className={`p-2.5 rounded-full flex items-center justify-center ${
-                  inputValue.trim() && !isLoading
-                    ? "bg-primary-500 text-white hover:bg-primary-600"
-                    : "bg-secondary-200 text-secondary-400 cursor-not-allowed"
-                }`}
-                disabled={!inputValue.trim() || isLoading}
-                title="Send message"
-              >
-                <FiSend size={18} />
-              </button>
-            </div>
+              className={`p-2 rounded-full flex items-center justify-center ${
+                isLoading
+                  ? "bg-gradient-to-br from-blue-400 to-violet-500 text-white"
+                  : inputValue.trim()
+                  ? "bg-gradient-to-br from-blue-400 to-violet-500 text-white hover:shadow-md"
+                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
+              disabled={!inputValue.trim() || isLoading}
+              title="Send message"
+            >
+              {isLoading ? (
+                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+              ) : (
+                <FiSend size={16} />
+              )}
+            </button>
           </div>
         </div>
       </div>
@@ -617,7 +622,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-violet-50">
+    <div className="flex flex-col min-h-screen bg-blue-50">
       <Head>
         <title>AI Agent Chat</title>
         <meta
