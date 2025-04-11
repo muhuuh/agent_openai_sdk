@@ -9,7 +9,7 @@ export default async function handler(
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { message, user_id } = req.body;
+  const { message, user_id, session_id } = req.body;
 
   if (!message) {
     return res.status(400).json({ error: "No message provided" });
@@ -17,15 +17,25 @@ export default async function handler(
 
   try {
     // Prepare request payload
-    const payload: { message: string; user_id?: string } = {
-      message: message,
-    };
+    const payload: { message: string; user_id?: string; session_id?: string } =
+      {
+        message: message,
+      };
 
     // Only add user_id if it's provided and valid
     if (user_id && typeof user_id === "string" && user_id.trim() !== "") {
       payload.user_id = user_id;
     } else {
       console.warn("Request made without a valid user_id");
+    }
+
+    // Add session_id if provided
+    if (
+      session_id &&
+      typeof session_id === "string" &&
+      session_id.trim() !== ""
+    ) {
+      payload.session_id = session_id;
     }
 
     const response = await fetch("http://localhost:8000/query", {

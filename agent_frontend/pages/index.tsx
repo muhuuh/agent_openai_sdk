@@ -10,6 +10,7 @@ import {
   FiMessageCircle,
   FiLock,
   FiKey,
+  FiPlusCircle,
 } from "react-icons/fi";
 import ChatMessage from "../components/ChatMessage";
 import ChatInput from "../components/ChatInput";
@@ -18,11 +19,14 @@ import NavBar from "../components/NavBar";
 import { useRouter } from "next/router";
 import { useAuth } from "../context/AuthContext";
 import ProtectedRoute from "../components/ProtectedRoute";
+import ChatSessionsList from "../components/ChatSessionsList";
 
 interface ChatMessageData {
+  id?: string;
   sender: "user" | "ai";
   content: string;
   timestamp: Date;
+  session_id?: string;
 }
 
 interface QuickAction {
@@ -125,6 +129,7 @@ interface ChatInterfaceProps {
   chatHistory: ChatMessageData[];
   isLoading: boolean;
   quickActions: QuickAction[];
+  currentSessionId: string | null;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -132,6 +137,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   chatHistory,
   isLoading,
   quickActions,
+  currentSessionId,
 }) => {
   const chatEndRef = useRef<null | HTMLDivElement>(null);
 
@@ -148,15 +154,29 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     >
       {/* Messages Area */}
       <div className="h-[70vh] overflow-y-auto p-4 space-y-4">
-        {chatHistory.map((message: ChatMessageData, index: number) => (
-          <ChatMessage
-            key={index}
-            sender={message.sender}
-            content={message.content}
-            timestamp={message.timestamp}
-          />
-        ))}
-        {isLoading && <LoadingMessage />}
+        {chatHistory.length === 0 && !isLoading ? (
+          <div className="flex items-center justify-center h-full text-center">
+            <div className="text-secondary-500">
+              <FiMessageCircle className="text-4xl mx-auto mb-4 text-primary-500" />
+              <h3 className="text-xl font-medium mb-2">Start a conversation</h3>
+              <p className="max-w-md text-sm">
+                Ask me anything about your tasks, emails, files, or meetings.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {chatHistory.map((message: ChatMessageData, index: number) => (
+              <ChatMessage
+                key={message.id || index}
+                sender={message.sender}
+                content={message.content}
+                timestamp={message.timestamp}
+              />
+            ))}
+            {isLoading && <LoadingMessage />}
+          </>
+        )}
         <div ref={chatEndRef} />
       </div>
 
@@ -171,27 +191,163 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 };
 
 export default function Home() {
-  const { user, signOut } = useAuth();
-  const [chatHistory, setChatHistory] = useState<ChatMessageData[]>([
-    {
-      sender: "ai",
+  const { user, signOut, supabase } = useAuth();
+  const [chatHistory, setChatHistory] = useState<ChatMessageData[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const router = useRouter();
+
+  // Generate a welcome message based on the session
+  const generateWelcomeMessage = () => {
+    return {
+      sender: "ai" as const,
       content:
         "✨ **Welcome to your AI Assistant!** I'm here to help you with emails, meetings, files, and more. How may I assist you today?",
       timestamp: new Date(),
-    },
-  ]);
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+    };
+  };
+
+  // Create a new chat session
+  const createNewSession = async () => {
+    if (!user) return;
+
+    try {
+      // Create new session
+      const { data: sessionData, error: sessionError } = await supabase
+        .from("chat_sessions")
+        .insert([
+          {
+            user_id: user.id,
+            title: "New Chat",
+          },
+        ])
+        .select()
+        .single();
+
+      if (sessionError) throw sessionError;
+
+      const newSessionId = sessionData.id;
+      setCurrentSessionId(newSessionId);
+
+      // Add welcome message to new session
+      const welcomeMessage = generateWelcomeMessage();
+
+      const { data: msgData, error: msgError } = await supabase
+        .from("messages")
+        .insert([
+          {
+            session_id: newSessionId,
+            sender: welcomeMessage.sender,
+            content: welcomeMessage.content,
+            created_at: welcomeMessage.timestamp.toISOString(),
+          },
+        ])
+        .select()
+        .single();
+
+      if (msgError) throw msgError;
+
+      // Set the new message with its ID from the database
+      setChatHistory([
+        { ...welcomeMessage, id: msgData.id, session_id: newSessionId },
+      ]);
+    } catch (error) {
+      console.error("Error creating new session:", error);
+    }
+  };
+
+  // Load an existing chat session
+  const loadChatSession = async (sessionId: string) => {
+    if (!user) return;
+
+    try {
+      setIsLoading(true);
+      setCurrentSessionId(sessionId);
+
+      const { data: messages, error } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("session_id", sessionId)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      // Transform messages to ChatMessageData format
+      const formattedMessages: ChatMessageData[] = (messages || []).map(
+        (msg) => ({
+          id: msg.id,
+          sender: msg.sender,
+          content: msg.content,
+          timestamp: new Date(msg.created_at),
+          session_id: msg.session_id,
+        })
+      );
+
+      setChatHistory(formattedMessages);
+    } catch (error) {
+      console.error("Error loading chat session:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle selecting a chat session
+  const handleSessionSelect = (sessionId: string) => {
+    if (sessionId === currentSessionId) return;
+    loadChatSession(sessionId);
+  };
+
+  // Initialize or load most recent chat session
+  useEffect(() => {
+    const initializeSession = async () => {
+      if (!user) return;
+
+      try {
+        // Get most recent session
+        const { data: recentSession, error } = await supabase
+          .from("chat_sessions")
+          .select("id")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error && error.code !== "PGRST116") {
+          // PGRST116 means no rows returned
+          throw error;
+        }
+
+        if (recentSession) {
+          // Load existing session
+          loadChatSession(recentSession.id);
+        } else {
+          // Create a new session
+          createNewSession();
+        }
+      } catch (error) {
+        console.error("Error initializing session:", error);
+        // Fallback to creating a new session
+        createNewSession();
+      }
+    };
+
+    if (user) {
+      initializeSession();
+    }
+  }, [user]);
 
   async function handleSendMessage(messageContent: string) {
-    // Don't process messages if not authenticated
-    if (!user || !messageContent.trim()) return;
+    // Don't process messages if not authenticated or no current session
+    if (!user || !currentSessionId || !messageContent.trim()) return;
 
     const userMessage: ChatMessageData = {
       sender: "user",
       content: messageContent,
       timestamp: new Date(),
+      session_id: currentSessionId,
     };
+
+    // Update local state first for immediate feedback
     setChatHistory((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
@@ -201,10 +357,30 @@ export default function Home() {
         throw new Error("User ID is missing. Please sign in again.");
       }
 
+      // Store user message in Supabase
+      const { data: msgData, error: msgError } = await supabase
+        .from("messages")
+        .insert([
+          {
+            session_id: currentSessionId,
+            sender: userMessage.sender,
+            content: userMessage.content,
+            created_at: userMessage.timestamp.toISOString(),
+          },
+        ])
+        .select()
+        .single();
+
+      if (msgError) throw msgError;
+
+      // Update the message with its ID
+      userMessage.id = msgData.id;
+
       // Prepare request payload with user ID
       const payload = {
         message: userMessage.content,
         user_id: user.id,
+        session_id: currentSessionId,
       };
 
       const res = await fetch("/api/ask", {
@@ -232,8 +408,33 @@ export default function Home() {
         content:
           data.response?.final_output || "Sorry, I couldn't get a response.",
         timestamp: new Date(),
+        session_id: currentSessionId,
       };
+
+      // Store AI response in Supabase
+      const { data: aiMsgData, error: aiMsgError } = await supabase
+        .from("messages")
+        .insert([
+          {
+            session_id: currentSessionId,
+            sender: aiResponse.sender,
+            content: aiResponse.content,
+            created_at: aiResponse.timestamp.toISOString(),
+          },
+        ])
+        .select()
+        .single();
+
+      if (aiMsgError) throw aiMsgError;
+
+      // Update AI message with its ID
+      aiResponse.id = aiMsgData.id;
+
+      // Update chat history with AI response
       setChatHistory((prev) => [...prev, aiResponse]);
+
+      // Update session title if it's still the default "New Chat"
+      updateSessionTitleIfNeeded(currentSessionId, userMessage.content);
     } catch (error) {
       console.error("Error:", error);
       const errorMessage: ChatMessageData = {
@@ -243,12 +444,70 @@ export default function Home() {
             ? `Error: ${error.message}`
             : "An error occurred while processing your request. Please try again later.",
         timestamp: new Date(),
+        session_id: currentSessionId,
       };
+
+      // Store error message in Supabase
+      try {
+        const { data: errorMsgData } = await supabase
+          .from("messages")
+          .insert([
+            {
+              session_id: currentSessionId,
+              sender: errorMessage.sender,
+              content: errorMessage.content,
+              created_at: errorMessage.timestamp.toISOString(),
+            },
+          ])
+          .select()
+          .single();
+
+        if (errorMsgData) {
+          errorMessage.id = errorMsgData.id;
+        }
+      } catch (saveError) {
+        console.error("Error saving error message:", saveError);
+      }
+
       setChatHistory((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
   }
+
+  // Update session title based on first user message
+  const updateSessionTitleIfNeeded = async (
+    sessionId: string,
+    message: string
+  ) => {
+    try {
+      // Get current session
+      const { data: session, error: fetchError } = await supabase
+        .from("chat_sessions")
+        .select("title")
+        .eq("id", sessionId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // If title is "New Chat", update with first few words from message
+      if (session && session.title === "New Chat") {
+        // Generate title from first message (max 5 words)
+        const words = message.split(" ");
+        const title =
+          words.slice(0, 5).join(" ") + (words.length > 5 ? "..." : "");
+
+        const { error: updateError } = await supabase
+          .from("chat_sessions")
+          .update({ title })
+          .eq("id", sessionId);
+
+        if (updateError) throw updateError;
+      }
+    } catch (error) {
+      console.error("Error updating session title:", error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -320,14 +579,29 @@ export default function Home() {
         </nav>
       )}
 
-      <main className="flex-1 container mx-auto px-4 py-6 flex items-center justify-center">
+      <main className="flex-1 container mx-auto px-4 py-6">
         {user ? (
-          <ChatInterface
-            onSendMessage={handleSendMessage}
-            chatHistory={chatHistory}
-            isLoading={isLoading}
-            quickActions={quickActions}
-          />
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Sidebar with chat sessions */}
+            <div className="md:w-1/4 w-full">
+              <ChatSessionsList
+                onSessionSelect={handleSessionSelect}
+                currentSessionId={currentSessionId}
+                onNewSession={createNewSession}
+              />
+            </div>
+
+            {/* Chat interface */}
+            <div className="md:w-3/4 w-full flex justify-center">
+              <ChatInterface
+                onSendMessage={handleSendMessage}
+                chatHistory={chatHistory}
+                isLoading={isLoading}
+                quickActions={quickActions}
+                currentSessionId={currentSessionId}
+              />
+            </div>
+          </div>
         ) : (
           <LandingPage />
         )}

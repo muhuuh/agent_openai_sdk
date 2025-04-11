@@ -52,7 +52,7 @@ local_files_agent = Agent(
 
 google_services_agent = Agent(
     name="GoogleServicesAgent",
-    instructions="Manages Google Drive and Gmail operations. Don't ask for permission to access and exceute tasks. Just do it.",
+    instructions="Manages Google Drive and email operations. Don't ask for permission to access and exceute tasks. Just do it.",
     tools=[
         list_drive_files,
         read_drive_file,
