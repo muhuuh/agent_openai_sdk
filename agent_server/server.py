@@ -1,14 +1,21 @@
+
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, validator
-import os
-import openai
-from agents import Agent, Runner
+
 #from agents import RemoteTool
 from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
 
 from dotenv import load_dotenv
 load_dotenv()
+
+import sys
+
+import os
+import openai
+from agents import Agent, Runner
+from agents.mcp.server import MCPServerStdio
 
 # Import your tools
 from tools.local_files import list_files, read_file
@@ -43,7 +50,17 @@ class Query(BaseModel):
             raise ValueError('user_id must be a non-empty string if provided')
         return v
 
-# Define sub-agents directly (no @handoff)
+# MCP subprocess for weather tools 
+weather_mcp = MCPServerStdio(
+    params={
+        "command": sys.executable,        
+        "args": ["./weather_mcp.py"]      
+    },
+    cache_tools_list=True
+)
+
+#child agents
+    
 local_files_agent = Agent(
     name="LocalFilesAgent",
     instructions="Handles operations related to local file management.",
@@ -77,11 +94,7 @@ google_calendar_agent = Agent(
 day_to_day_agent = Agent(
     name="DayToDayAgent",
     instructions="Takes care of day to day related requests like weather forecast, news, etc.",
-    tools=[
-        get_weather,
-        get_hourly_forecast,
-        get_daily_forecast,
-    ],
+    mcp_servers=[weather_mcp],
 )
 
 todo_agent = Agent(
