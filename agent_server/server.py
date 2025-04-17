@@ -152,7 +152,8 @@ async def query_agent(query: Query):
                 value = os.environ[key]
                 print(f"  - {key}: {'set (not shown)' if 'KEY' in key else value}")
         
-        response = await Runner.run(coordinator_agent, query.message, context=context)
+        async with weather_mcp:
+            response = await Runner.run(coordinator_agent, query.message, context=context)
         print(f"[SERVER DEBUG] Agent response: {response}")
         return {"response": response}
     except ValueError as e:
