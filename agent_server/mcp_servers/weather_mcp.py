@@ -1,5 +1,18 @@
 #!/usr/bin/env python3
 import sys, json
+import os # Re-add os import
+
+# Add the parent directory (/app) to sys.path to find the 'tools' module
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+# # Add the project root to sys.path to allow relative imports # Removed path manipulation
+# project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+# if project_root not in sys.path:
+#     sys.path.insert(0, project_root)
+
+# Import from 'tools' directly as /app is the root in the container
 from tools.weather import (
     get_weather,
     get_hourly_forecast,
