@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-"""
-weather_mcp.py  –  MCP server for the weather tools
-Only change vs previous version:  tools/call now replies with
-    {"result": {"output": <tool‑return‑value>}}
-Everything else is untouched.
-"""
 import sys, json
 from tools.weather import (
     get_weather,
@@ -28,7 +22,7 @@ TOOLS = {
         "func": get_weather,
     },
     "get_hourly_forecast": {
-        "description": "48‑hour maximum forecast",
+        "description": "48‑hour maximum forecast for a specific city",
         "inputSchema":  {"type": "object",
                          "properties": {"city":  {"type": "string"},
                                         "hours": {"type": "integer"}},
@@ -37,7 +31,7 @@ TOOLS = {
         "func": get_hourly_forecast,
     },
     "get_daily_forecast": {
-        "description": "7‑day maximum forecast",
+        "description": "7‑day maximum forecast for a specific city",
         "inputSchema":  {"type": "object",
                          "properties": {"city": {"type": "string"},
                                         "days": {"type": "integer"}},

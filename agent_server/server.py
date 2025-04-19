@@ -27,7 +27,7 @@ BASE_DIR = os.path.dirname(__file__)
 weather_mcp = MCPServerStdio(
     params={
         "command": sys.executable,
-        "args": [os.path.join(BASE_DIR, "weather_mcp.py")],
+        "args": [os.path.join(BASE_DIR, "mcp_servers", "weather_mcp.py")],
         "cwd": BASE_DIR,
     },
     cache_tools_list=True
@@ -43,34 +43,41 @@ from tools.todo             import create_todo_task
 
 local_files_agent = Agent(
     name="LocalFilesAgent",
-    instructions="Handle local FS ops.",
+    instructions="Handles operations related to local file management.",
     tools=[list_files, read_file]
 )
 google_services_agent = Agent(
     name="GoogleServicesAgent",
-    instructions="Handle Drive & Gmail.",
+    instructions="Manages Google Drive and email (Gmail provider) operations. Don't ask for permission to access and exceute tasks. Just do it.",
     tools=[list_drive_files, read_drive_file, upload_drive_file, list_recent_emails, read_emails, send_email]
 )
 google_calendar_agent = Agent(
     name="GoogleCalendarAgent",
-    instructions="Manage Calendar.",
+    instructions="Manages Google Calendar operations, like checking schedules, responding to invites, and creating new events.",
     tools=[list_calendar_events, list_pending_invitations, respond_to_invitation, create_calendar_event]
 )
 day_to_day_agent = Agent(
     name="DayToDayAgent",
-    instructions="Day‑to‑day (weather, news).",
+    instructions="Takes care of day to day related requests like weather forecast, news, etc.",
     mcp_servers=[weather_mcp]
 )
 todo_agent = Agent(
     name="TodoAgent",
-    instructions="Create to‑do tasks.",
+    instructions="""
+    Handles task management using the user's to-do app.
+     When creating tasks:
+     1. Always include all required parameters (main_task, sub_task, category, importance, bucket, time_estimate, user_id)
+     2. For user_id, use the context's user_id value if available
+     3. Importance should be one of: Low, Medium, High
+     4. Bucket should be one of: Today, Tomorrow, Upcoming, Someday
+     5. time_estimate should be in minutes (e.g., 60 for 1 hour)
+     """,
     tools=[create_todo_task]
 )
 
 coordinator = Agent(
     name="CoordinatorAgent",
-    instructions="Route to the right agent.",
-    handoffs=[local_files_agent, google_services_agent, google_calendar_agent, day_to_day_agent, todo_agent]
+    instructions="You are a master coordinator. Delegate tasks to the correct agent based on user request.",    handoffs=[local_files_agent, google_services_agent, google_calendar_agent, day_to_day_agent, todo_agent]
 )
 
 # 3) FastAPI
@@ -112,8 +119,6 @@ async def query_agent(q: Query):
             q.message,
             context={"user_id": q.user_id}
         )
-        #log(f"🛠️ Runner.run returned: {result!r}")
-
         # extract text
         if hasattr(result, "final_output"):
             answer = result.final_output
