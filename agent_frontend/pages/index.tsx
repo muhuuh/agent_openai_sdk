@@ -478,6 +478,8 @@ export default function Home() {
       }
 
       const data = await res.json();
+      console.log("[UI] ❇️  Data from /api/ask:", data);
+
 
       if (!data || !data.response) {
         throw new Error("Invalid response from server");

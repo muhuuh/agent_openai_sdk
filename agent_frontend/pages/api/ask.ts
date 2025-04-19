@@ -1,62 +1,46 @@
+// pages/api/ask.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // Only allow POST requests
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+  console.log("[ask.ts] ↪️ Browser payload:", req.body);
 
   const { message, user_id, session_id } = req.body;
-
-  if (!message) {
-    return res.status(400).json({ error: "No message provided" });
+  const payload: any = { message, user_id };
+  if (session_id && typeof session_id === "string") {
+    payload.session_id = session_id;
   }
 
+  console.log("[ask.ts] 📤 Forwarding to agent-server:", payload);
+
+  let response;
   try {
-    // Prepare request payload
-    const payload: { message: string; user_id?: string; session_id?: string } =
-      {
-        message: message,
-      };
-
-    // Only add user_id if it's provided and valid
-    if (user_id && typeof user_id === "string" && user_id.trim() !== "") {
-      payload.user_id = user_id;
-    } else {
-      console.warn("Request made without a valid user_id");
-    }
-
-    // Add session_id if provided
-    if (
-      session_id &&
-      typeof session_id === "string" &&
-      session_id.trim() !== ""
-    ) {
-      payload.session_id = session_id;
-    }
-
-    const response = await fetch("http://localhost:8000/query", {
+    response = await fetch("http://localhost:8000/query", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      console.error("Agent server error:", response.status, errorData);
-      return res.status(response.status).json({
-        error: "Agent server returned an error",
-        details: errorData || response.statusText,
-      });
-    }
-
-    const data = await response.json();
-    res.status(200).json({ response: data.response });
-  } catch (error) {
-    console.error("Failed to query agent server:", error);
-    res.status(500).json({ error: "Agent server failed." });
+  } catch (err) {
+    console.error("[ask.ts] ❌ Fetch error:", err);
+    return res.status(500).json({ error: "Could not reach agent server" });
   }
+  console.log("[ask.ts] HTTP status from agent-server:", response.status);
+
+  let data: any;
+  try {
+    data = await response.json();
+  } catch (err) {
+    console.error("[ask.ts] ❌ Invalid JSON from agent-server:", err);
+    return res.status(500).json({ error: "Invalid JSON from agent server" });
+  }
+  console.log("[ask.ts] ← JSON from agent-server:", data);
+
+  if (!data?.response) {
+    console.error("[ask.ts] ❌ Missing `response` field:", data);
+    return res.status(500).json({ error: "No response from agent server" });
+  }
+
+  return res.status(200).json({ response: data.response });
 }

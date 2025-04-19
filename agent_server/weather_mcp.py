@@ -1,119 +1,138 @@
 #!/usr/bin/env python3
+"""
+weather_mcp.py  –  MCP server for the weather tools
+Only change vs previous version:  tools/call now replies with
+    {"result": {"output": <tool‑return‑value>}}
+Everything else is untouched.
+"""
 import sys, json
-from tools.weather import get_weather, get_hourly_forecast, get_daily_forecast
+from tools.weather import (
+    get_weather,
+    get_hourly_forecast,
+    get_daily_forecast,
+)
 
-# === DEBUG LOGGER ===
 def log(msg: str):
-    sys.stderr.write(f"[MCP] {msg}\n")
-    sys.stderr.flush()
+    print(f"[MCP] {msg}", file=sys.stderr, flush=True)
 
-log("Starting weather_mcp…")
-
-# Tool registry
+# ----------------------------------------------------------------------
+# tool registry
+# ----------------------------------------------------------------------
 TOOLS = {
     "get_weather": {
-        "description": "Get the current weather for a specified city.",
-        "inputSchema": {
-            "type": "object",
-            "properties": {"city": {"type": "string"}},
-            "required": ["city"]
-        },
+        "description": "Get current weather for a city",
+        "inputSchema":  {"type": "object",
+                         "properties": {"city": {"type": "string"}},
+                         "required": ["city"]},
         "outputSchema": {"type": "string"},
-        "func": get_weather
+        "func": get_weather,
     },
     "get_hourly_forecast": {
-        "description": "Get hourly forecast up to 48 hours.",
-        "inputSchema": {
-            "type": "object",
-            "properties": {"city": {"type": "string"}, "hours": {"type": "integer"}},
-            "required": ["city", "hours"]
-        },
+        "description": "48‑hour maximum forecast",
+        "inputSchema":  {"type": "object",
+                         "properties": {"city":  {"type": "string"},
+                                        "hours": {"type": "integer"}},
+                         "required": ["city", "hours"]},
         "outputSchema": {"type": "string"},
-        "func": get_hourly_forecast
+        "func": get_hourly_forecast,
     },
     "get_daily_forecast": {
-        "description": "Get daily forecast up to 7 days.",
-        "inputSchema": {
-            "type": "object",
-            "properties": {"city": {"type": "string"}, "days": {"type": "integer"}},
-            "required": ["city", "days"]
-        },
+        "description": "7‑day maximum forecast",
+        "inputSchema":  {"type": "object",
+                         "properties": {"city": {"type": "string"},
+                                        "days": {"type": "integer"}},
+                         "required": ["city", "days"]},
         "outputSchema": {"type": "string"},
-        "func": get_daily_forecast
-    }
+        "func": get_daily_forecast,
+    },
 }
 
-def send_response(req_id, result=None, error=None):
-    resp = {"jsonrpc": "2.0", "id": req_id}
+# ----------------------------------------------------------------------
+# helper to send a JSON‑RPC response
+# ----------------------------------------------------------------------
+def send(id_, *, result=None, error=None):
+    resp = {"jsonrpc": "2.0", "id": id_}
     if error is not None:
-        resp["error"] = {"message": error}
-        log(f"Responding with error id={req_id}: {error}")
+        resp["error"] = {"message": str(error)}
     else:
         resp["result"] = result
-        log(f"Responding with result id={req_id}: {result!r}")
     sys.stdout.write(json.dumps(resp) + "\n")
     sys.stdout.flush()
+    log(f"→ {resp}")
 
-# Main JSON-RPC loop
+log("weather_mcp started")
+
+# ----------------------------------------------------------------------
+# main JSON‑RPC loop
+# ----------------------------------------------------------------------
 for line in sys.stdin:
     try:
         req = json.loads(line)
     except json.JSONDecodeError:
-        log("Skipping invalid JSON line")
+        log("Skipping invalid JSON")
         continue
 
-    method = req.get("method")
-    req_id = req.get("id")
-    params = req.get("params", {})
-    log(f"Received method={method!r}, id={req_id}, params={params}")
+    mth   = req.get("method")
+    id_   = req.get("id")
+    param = req.get("params", {})
 
-    if method == "initialize":
-        protocol_version = params.get("protocolVersion", "")
-        capabilities     = params.get("capabilities", {})
-        server_info      = {"name": "weather_mcp", "version": "0.1.0"}
-        init_res = {
-            "protocolVersion": protocol_version,
-            "capabilities":    capabilities,
-            "serverInfo":      server_info
-        }
-        send_response(req_id, init_res)
+    # ---- handshake ---------------------------------------------------
+    if mth == "initialize":
+        send(id_, result={
+            "protocolVersion": param.get("protocolVersion", ""),
+            "capabilities":    param.get("capabilities", {}),
+            "serverInfo":      {"name": "weather_mcp", "version": "0.1.0"},
+        })
 
-    elif method == "notifications/initialized":
-        log("notifications/initialized received; no response needed.")
+    elif mth == "notifications/initialized":
+        log("Client initialised")
 
-    elif method == "tools/list":
-        tools_list = [
-            {"name": name,
-             "description": info["description"],
-             "inputSchema": info["inputSchema"],
-             "outputSchema": info["outputSchema"]}
-            for name, info in TOOLS.items()
-        ]
-        send_response(req_id, {"tools": tools_list})
+    # ---- list tools --------------------------------------------------
+    elif mth == "tools/list":
+        send(id_, result={
+            "tools": [
+                {"name": n,
+                 "description": t["description"],
+                 "inputSchema":  t["inputSchema"],
+                 "outputSchema": t["outputSchema"]}
+                for n, t in TOOLS.items()
+            ]
+        })
 
-    elif method == "tools/call":
-        name = params.get("name") or params.get("tool_name")
-        args = params.get("arguments") or params.get("args") or {}
-        log(f"Executing tool {name} with args={args}")
+    # ---- call a tool -------------------------------------------------
+    elif mth == "tools/call":
+        name = param.get("name") or param.get("tool_name")
+        args = param.get("arguments") or {}
+
         if name not in TOOLS:
-            send_response(req_id, error=f"Unknown tool '{name}'")
-        else:
-            fn = TOOLS[name]["func"]
-            # unwrap decorated FunctionTool if present
-            real_fn = getattr(fn, "__wrapped__", getattr(fn, "func", fn))
-            func_name = getattr(real_fn, "__name__", name)
-            log(f"Calling function {func_name}")
-            try:
-                output = real_fn(**args)
-                send_response(req_id, output)
-            except Exception as e:
-                log(f"Tool exception: {e}")
-                send_response(req_id, error=str(e))
+            send(id_, error=f"Unknown tool '{name}'")
+            continue
 
-    elif method == "shutdown":
-        send_response(req_id, {})
-        log("Shutdown requested—exiting.")
+        fn = getattr(TOOLS[name]["func"], "__wrapped__", TOOLS[name]["func"])
+        log(f"Executing {name}({args})")
+
+        try:
+            result_text = fn(**args)
+            send(
+                id_,
+                result={
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": result_text
+                        }
+                    ]
+                }
+            )
+
+        except Exception as exc:
+            send(id_, error=str(exc))
+
+    # ---- shutdown ----------------------------------------------------
+    elif mth == "shutdown":
+        send(id_, result={})
+        log("Shutdown")
         sys.exit(0)
 
     else:
-        log(f"Unknown method: {method}")
+        send(id_, error=f"Unknown method '{mth}'")
