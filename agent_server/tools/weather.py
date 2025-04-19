@@ -22,7 +22,7 @@ def get_coordinates(city: str):
     data = response.json()[0]
     return data['lat'], data['lon']
 
-@function_tool
+
 def get_weather(city: str) -> str:
     """
     Get the current weather for a specified city using the free OpenWeatherMap API.
@@ -53,7 +53,7 @@ def get_weather(city: str) -> str:
         f"Humidity: {humidity}%."
     )
 
-@function_tool
+
 def get_hourly_forecast(city: str, hours: int) -> str:
     """
     Get hourly weather forecast (up to 48 hours) using OpenWeatherMap One Call API 3.0.
@@ -94,7 +94,7 @@ def get_hourly_forecast(city: str, hours: int) -> str:
     except Exception as e:
         return f"Error parsing hourly forecast: {str(e)}"
 
-@function_tool
+
 def get_daily_forecast(city: str, days: int) -> str:
     """
     Get daily weather forecast (up to 7 days) using OpenWeatherMap One Call API 3.0.
